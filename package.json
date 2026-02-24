@@ -1,0 +1,32 @@
+{
+  "name": "schema-gen",
+  "version": "1.0.0",
+  "description": "CLI tool to generate JSON Schema, TypeScript types, Zod validators, and API docs from JSON examples",
+  "main": "dist/index.js",
+  "bin": {
+    "schema-gen": "./dist/cli.js"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/cli.js",
+    "test": "node dist/cli.js '{\"name\":\"John\",\"age\":30,\"active\":true}'",
+    "demo": "tsc && node dist/demo-cli-ux.js"
+  },
+  "keywords": [
+    "json-schema",
+    "typescript",
+    "zod",
+    "cli"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"cd /Volumes/Fanxiang\\\\ S500Pro\\\\ 1TB\\\\ Media/GameDev/Codes/auto-company/projects/schema-gen && git add . && git status --short | head -20\",\"description\":\"添加文件到 git\"}",
+  "error": "Exit code 1\n下列路径根据您的一个 .gitignore 文件而被忽略：\nprojects/schema-gen\n提示： 如果您确实想添加它们，请使用 -f 选项。\n提示： Disable this message with \"git config set advice.addIgnoredFile false\"\n\n下列路径根据您的一个 .gitignore 文件而被忽略：\nprojects/schema-gen\n提示： 如果您确实想添加它们，请使用 -f 选项。\n提示： Disable this message with \"git config set advice.addIgnoredFile false\"",
+  "timestamp": "2026-02-24T16:00:56.324Z",
+  "retry_count": 1
+}
