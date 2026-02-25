@@ -4,7 +4,9 @@ CLI tool to generate JSON Schema, TypeScript types, Zod validators, and API docu
 
 ## Try Online (No Install)
 
-**Live Demo**: https://kezhihao.github.io/schema-gen/demo/
+**Live Demo**: https://raw.githubusercontent.com/kezhihao/schema-gen/master/demo/index.html
+
+> **How to use**: Click the link above, then save the page as `schema-gen-demo.html` and open it in your browser. Or right-click → "Open in new tab" to view directly.
 
 Try Schema-Gen directly in your browser - no installation required!
 
