@@ -2,13 +2,36 @@
 
 CLI tool to generate JSON Schema, TypeScript types, Zod validators, and API documentation from JSON examples.
 
+## Try Online (No Install)
+
+**Live Demo**: https://kezhihao.github.io/schema-gen/demo/
+
+Try Schema-Gen directly in your browser - no installation required!
+
 ## Installation
+
+### Option 1: npm (recommended)
 
 ```bash
 npm install -g schema-gen
 ```
 
-Or use directly with npx:
+### Option 2: Direct Download (no npm required)
+
+Download the latest release from GitHub:
+
+```bash
+# Download the zip file
+curl -L -o schema-gen.zip https://github.com/kezhihao/schema-gen/releases/latest/download/schema-gen-v1.0.0.zip
+
+# Extract
+unzip schema-gen.zip
+
+# Use directly
+./schema-gen-v1.0.0/bin/schema-gen --help
+```
+
+Or use with npx:
 
 ```bash
 npx schema-gen '{"name":"John","age":30}'
