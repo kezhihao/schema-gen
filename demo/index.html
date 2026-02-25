@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Schema-Gen - JSON Schema Generator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 2rem; }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #38bdf8; }
+    .subtitle { color: #94a3b8; margin-bottom: 2rem; }
+    .input-group { margin-bottom: 1.5rem; }
+    label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+    textarea { width: 100%; height: 150px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; padding: 1rem; font-family: 'Monaco', 'Menlo', monospace; font-size: 0.9rem; resize: vertical; }
+    textarea:focus { outline: none; border-color: #38bdf8; }
+    .btn { background: #38bdf8; color: #0f172a; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 1rem; transition: background 0.2s; }
+    .btn:hover { background: #0ea5e9; }
+    .outputs { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 2rem; }
+    .output-box { background: #1e293b; border-radius: 8px; padding: 1rem; }
+    .output-box h3 { font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    pre { background: #0f172a; padding: 0.75rem; border-radius: 4px; overflow-x: auto; font-size: 0.8rem; line-height: 1.5; max-height: 300px; }
+    .error { background: #450a0a; color: #fca5a5; padding: 1rem; border-radius: 8px; margin-top: 1rem; }
+    .footer { margin-top: 3rem; text-align: center; color: #64748b; font-size: 0.85rem; }
+    .footer a { color: #38bdf8; text-decoration: none; }
+    @media (max-width: 640px) { .outputs { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Schema-Gen</h1>
+    <p class="subtitle">Generate JSON Schema, TypeScript, and Zod from JSON examples</p>
+
+    <div class="input-group">
+      <label>Enter your JSON:</label>
+      <textarea id="jsonInput" placeholder='{"name": "John", "age": 30, "email": "john@example.com"}'>{
+  "name": "John",
+  "age": 30,
+  "email": "john@example.com",
+  "active": true,
+  "roles": ["admin", "user"],
+  "metadata": {
+    "created": "2024-01-01",
+    "updated": "2024-01-15"
+  }
+}</textarea>
+    </div>
+
+    <button class="btn" onclick="generate()">Generate Schema</button>
+
+    <div id="error" class="error" style="display: none;"></div>
+
+    <div class="outputs">
+      <div class="output-box">
+        <h3>JSON Schema</h3>
+        <pre id="jsonSchema"></pre>
+      </div>
+      <div class="output-box">
+        <h3>TypeScript</h3>
+        <pre id="typescript"></pre>
+      </div>
+      <div class="output-box">
+        <h3>Zod Validator</h3>
+        <pre id="zod"></pre>
+      </div>
+      <div class="output-box">
+        <h3>API Doc</h3>
+        <pre id="apiDoc"></pre>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>CLI Version: <a href="https://github.com/kezhihao/schema-gen">GitHub</a> | <a href="https://www.npmjs.com/package/schema-gen">npm</a></p>
+      <p>&copy; 2026 Schema-Gen</p>
+    </div>
+  </div>
+
+  <script>
+    function inferType(value) {
+      if (value === null) return { kind: 'null' };
+      const t = typeof value;
+      if (t === 'string') return { kind: 'string' };
+      if (t === 'number') return { kind: 'number' };
+      if (t === 'boolean') return { kind: 'boolean' };
+      if (Array.isArray(value)) {
+        if (value.length === 0) return { kind: 'array', items: { kind: 'string' } };
+        return { kind: 'array', items: inferType(value[0]) };
+      }
+      if (t === 'object') {
+        const props = {};
+        const required = [];
+        for (const key of Object.keys(value)) {
+          props[key] = inferType(value[key]);
+          required.push(key);
+        }
+        return { kind: 'object', properties: props, required };
+      }
+      return { kind: 'string' };
+    }
+
+    function typeDefToJsonSchema(def, name = 'Schema') {
+      if (def.kind === 'null') return { type: 'null' };
+      if (def.kind === 'string') return { type: 'string' };
+      if (def.kind === 'number') return { type: 'number' };
+      if (def.kind === 'boolean') return { type: 'boolean' };
+      if (def.kind === 'array') return { type: 'array', items: typeDefToJsonSchema(def.items) };
+      if (def.kind === 'object') {
+        const props = {};
+        for (const key of Object.keys(def.properties || {})) {
+          props[key] = typeDefToJsonSchema(def.properties[key], key);
+        }
+        return { type: 'object', properties: props, required: def.required };
+      }
+      return { type: 'string' };
+    }
+
+    function typeDefToTypeScript(def, name = 'Schema') {
+      if (def.kind === 'null') return 'null';
+      if (def.kind === 'string') return 'string';
+      if (def.kind === 'number') return 'number';
+      if (def.kind === 'boolean') return 'boolean';
+      if (def.kind === 'array') return `${typeDefToTypeScript(def.items, name)}[]`;
+      if (def.kind === 'object') {
+        const props = [];
+        for (const key of Object.keys(def.properties || {})) {
+          const optional = def.required?.includes(key) ? '' : '?';
+          props.push(`  ${key}${optional}: ${typeDefToTypeScript(def.properties[key], key)};`);
+        }
+        return `interface ${name} {\n${props.join('\n')}\n}`;
+      }
+      return 'any';
+    }
+
+    function typeDefToZod(def, name = 'Schema') {
+      if (def.kind === 'null') return 'z.null()';
+      if (def.kind === 'string') return 'z.string()';
+      if (def.kind === 'number') return 'z.number()';
+      if (def.kind === 'boolean') return 'z.boolean()';
+      if (def.kind === 'array') return `z.array(${typeDefToZod(def.items, name)})`;
+      if (def.kind === 'object') {
+        const props = [];
+        for (const key of Object.keys(def.properties || {})) {
+          props.push(`  ${key}: ${typeDefToZod(def.properties[key], key)}`);
+        }
+        return `z.object({\n${props.join(',\n')}\n})`;
+      }
+      return 'z.any()';
+    }
+
+    function typeDefToApiDoc(def, name = 'Schema') {
+      let doc = `# ${name}\n\n`;
+      doc += `| Field | Type | Required | Description |\n`;
+      doc += `|-------|------|----------|-------------|\n`;
+      if (def.kind === 'object' && def.properties) {
+        for (const key of Object.keys(def.properties)) {
+          const p = def.properties[key];
+          const required = def.required?.includes(key) ? 'Yes' : 'No';
+          const type = p.kind;
+          doc += `| ${key} | ${type} | ${required} | - |\n`;
+        }
+      }
+      return doc;
+    }
+
+    function generate() {
+      const input = document.getElementById('jsonInput').value;
+      const errorEl = document.getElementById('error');
+      errorEl.style.display = 'none';
+
+      try {
+        const json = JSON.parse(input);
+        const typeDef = inferType(json);
+
+        const schema = typeDefToJsonSchema(typeDef);
+        document.getElementById('jsonSchema').textContent = JSON.stringify(schema, null, 2);
+
+        const ts = typeDefToTypeScript(typeDef, 'User');
+        document.getElementById('typescript').textContent = ts;
+
+        const zodCode = typeDefToZod(typeDef, 'User') + '\n\n// Infer type\nexport type User = z.infer<typeof UserSchema>;';
+        document.getElementById('zod').textContent = zodCode;
+
+        const apiDoc = typeDefToApiDoc(typeDef, 'User');
+        document.getElementById('apiDoc').textContent = apiDoc;
+      } catch (e) {
+        errorEl.textContent = 'Error: ' + e.message;
+        errorEl.style.display = 'block';
+      }
+    }
+
+    generate();
+  </script>
+</body>
+</html>
